@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<html>
+<head>
+    <script src="//cdn.rawgit.com/dcodeIO/protobuf.js/6.8.8/dist/protobuf.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js">
+    </script>
+    <script type="text/javascript">
+        $(function (arrayLike) {
+            var conn = null;
+            function log(msg) {
+                var control = $('#log');
+                control.html(control.html() + msg + '<br/>');
+                control.scrollTop(control.scrollTop() + 1000);
+            }
+            function connect() {
+                disconnect();
+                var wsUri = (window.location.protocol=='https:'&&'wss://'||'ws://') + window.location.hostname + ':3000/wss';
+                // var wsUri = (window.location.protocol=='https:'&&'wss://'||'ws://') + window.location.hostname + ':8080/';
+                // 1. Socket Init
+                const socket = new WebSocket(wsUri);
+                socket.binaryType = 'arraybuffer'
+                log('Connecting...');
+                // 2. Listen to Connection opening
+                socket.addEventListener("open", function (event) {
+                    console.log("Connection Opened, sending message");
+                    socket.send('{"message": "HelloWorld!"}');
+                    log('Connected.');
+                    update_ui();
+                })
+
+                // Listen to Error Events
+                socket.addEventListener("error", function(err) {
+                    console.log("error: ", err);
+                });
+
+                // Listen for Connection closure
+                socket.addEventListener("close", function() {
+                    log('Disconnected.');
+                    conn = null;
+                    update_ui();
+                });
+
+                // 3. Most Importantly: Listen for received messages
+                socket.addEventListener('message', function (event) {
+                    // Protobuf Implementation here, to manage messages
+                    log('Has message.');
+                    // I retrieve the Base64 Encoded string
+                    msg = event.data
+                    // I transform such string to the typed array needed
+                    buffer = Uint8Array.from(msg, c => c.charCodeAt(0))
+
+                    // Initiate the Protobuf library by opening the .proto file
+                    protobuf.load("/proto/body_info.proto", function(err, root) {
+                        // Retrieve the type of message I want to decode from the .proto file
+                        var MyMessage = root.lookupType("BodyInfo");
+
+                        // Finally I can decode my message
+                        var message = MyMessage.decode(buffer);
+
+                        // message now contains an object with the properties specified in the .proto file
+                        console.log(message.knowledge)
+                    })
+                });
+            }
+
+            function disconnect() {
+                if (conn != null) {
+                    log('Disconnecting...');
+                    conn.close();
+                    conn = null;
+                    update_ui();
+                }
+            }
+            function update_ui() {
+                var msg = '';
+                if (conn == null) {
+                    $('#status').text('disconnected');
+                    $('#connect').html('Connect');
+                } else {
+                    $('#status').text('connected (' + conn.protocol + ')');
+                    $('#connect').html('Disconnect');
+                }
+            }
+            $('#connect').click(function() {
+                if (conn == null) {
+                    connect();
+                } else {
+                    disconnect();
+                }
+                update_ui();
+                return false;
+            });
+            $('#send').click(function() {
+                var text = $('#text').val();
+                log('Sending: ' + text);
+                conn.send(text);
+                $('#text').val('').focus();
+                return false;
+            });
+            $('#text').keyup(function(e) {
+                if (e.keyCode === 13) {
+                    $('#send').click();
+                    return false;
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<h3>Chat!</h3>
+<div>
+    <button id="connect">Connect</button>&nbsp;|&nbsp;Status:
+    <span id="status">disconnected</span>
+</div>
+<div id="log"
+     style="width:20em;height:15em;overflow:auto;border:1px solid black">
+</div>
+<form id="chatform" onsubmit="return false;">
+    <input id="text" type="text" />
+    <input id="send" type="button" value="Send" />
+</form>
+</body>
+</html>

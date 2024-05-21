@@ -1,0 +1,61 @@
+syntax = "proto3";
+package text_life;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "structs/pb";
+
+enum Status {
+  Done = 0;
+  ClientParamErr = 1;
+  ServerException = 2;
+}
+
+enum RouteId {
+  BodyInfo = 0;
+  Eat = 1;
+  Farm = 2;
+}
+
+message MsgPacket {
+  uint64 req_id = 1; // 请求ID
+  RouteId route_id = 2; // 路由标记ID
+  google.protobuf.Timestamp req_time = 3; // 请求时间
+  oneof body {
+    BodyInfoReq body_info_req = 13; // 身体状况
+    BodyInfoResp body_info_resp = 14;
+    EatReq eat_req = 15;
+    EatResp eat_resp = 16;
+    FarmReq farm_req = 17;
+    FarmResp farm_resp = 18;
+  }
+}
+
+message BodyInfoReq {
+  uint64 targetId = 1;
+}
+
+message EatReq {
+  uint64 bagId = 1;
+  uint64 goodsId = 2;
+}
+
+message BodyInfoResp {
+  uint64 user_id = 1;
+  uint32 satiation = 2; // 饱腹
+  uint32 energy = 3; // 精力
+  uint32 knowledge = 4; // 知识水准
+  uint32 age = 5; // 年龄
+}
+
+message EatResp {
+  Status status = 1;
+}
+
+message FarmReq {
+  Status status = 1;
+}
+
+message FarmResp {
+  Status status = 1;
+}
