@@ -4,13 +4,33 @@ import (
 	"fmt"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/uiosun/text-life/handle"
 	"github.com/uiosun/text-life/structs/pb"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"log"
 )
 
+type Player struct {
+	id uint
+}
+
+type NowDungeon struct {
+	id uint // Player ID
+}
+
+type GameObject interface {
+	Save() bool
+}
+
 func main() {
+	h := handle.Handle{}
+	err := h.GetConfig()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("handler init is done!")
+
 	app := fiber.New()
 
 	app.Use("/ws", func(c *fiber.Ctx) error {

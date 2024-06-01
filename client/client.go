@@ -9,6 +9,8 @@ package main
 
 import (
 	"flag"
+	"github.com/pterm/pterm"
+	"github.com/uiosun/text-life/client/world"
 	"github.com/uiosun/text-life/structs/pb"
 	"google.golang.org/protobuf/proto"
 	"log"
@@ -21,6 +23,32 @@ import (
 )
 
 var addr = flag.String("addr", "localhost:3000", "http service address")
+
+/*
+PTerm: https://github.com/pterm/pterm?tab=readme-ov-file
+*/
+func main() {
+	w := world.World{}
+	w.Init()
+
+	for {
+		// input with single line
+		result, _ := pterm.DefaultInteractiveTextInput.WithDefaultValue("fill your select, and use 'turn' to next turn").Show()
+		pterm.Println()
+
+		switch result {
+		case "get-map":
+			w.Turn()
+		case "exit":
+			fallthrough
+		case "E":
+			pterm.Println("Bey~")
+			return
+		}
+
+		w.RefreshUI()
+	}
+}
 
 func main() {
 	flag.Parse()
